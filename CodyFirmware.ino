@@ -1,6 +1,6 @@
 // Global parameters
 #undef SIMULATION
-#define DEBUG
+#undef DEBUG
 #define BAUD_RATE 115200
 
 // Debug
@@ -10,7 +10,7 @@
 
   Plotter plot;
   double plotX = 0;
-  double plotY = 0; 
+  double plotY = 0;
 #endif
 
 // Include dependencies
@@ -34,7 +34,7 @@
 void setup() {
   Serial.begin(BAUD_RATE);
   delay(500);
-  
+
   dataProvider.initialize();
   hardwareProvider.initialize();
   Cody::initialize(dataProvider, hardwareProvider);

@@ -58,7 +58,7 @@ class Fusion {
       // Construct fusion data
       fusionData.orientation = orientation;
       fusionData.position = Vector3(previousFusionData.position.x + deltaX, previousFusionData.position.y + deltaY, 0);
-      fusionData.toolheadPosition = Vector3(previousFusionData.toolheadPosition.x + toolheadDeltaX, previousFusionData.toolheadPosition.y + toolheadDeltaZ);
+      fusionData.toolheadPosition = Vector3(previousFusionData.toolheadPosition.x - toolheadDeltaX, previousFusionData.toolheadPosition.y + toolheadDeltaZ);
       fusionData.wheelsPosition = Vector3(previousFusionData.wheelsPosition.x - wheelsDelta);
       fusionData.millPosition = Vector3(previousFusionData.millPosition.x + millDelta);
       fusionData.voltage = averageVoltage;
@@ -125,7 +125,7 @@ class Fusion {
         h = 60.0f * ((b - r) / delta + 2.0f);
       else
         h = 60.0f * ((r - g) / delta + 4.0f);
-      
+
       if (h < 0.0f) h += 360.0f;
 
       // Find color with smallest hue distance
@@ -138,7 +138,7 @@ class Fusion {
       for (int i = 0; i < 3; i++) {
         float distance = std::abs(h - hues[i]);
         if (distance > 180.0f) distance = 360.0f - distance;
-        
+
         if (distance < minDistance) {
           minDistance = distance;
           result = colors[i];

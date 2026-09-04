@@ -27,7 +27,7 @@
 // Movement
 #define MOVEMENT_ACCELERATION_MS 500.0
 #define MOVEMENT_DECELERATION_MM 250.0
-#define MOVEMENT_MIN_SPEED 12
+#define MOVEMENT_MIN_SPEED 25
 #define MOVEMENT_LOOKAHEAD 100.0
 #define TRANSITION_LOOKAHEAD 250.0
 
@@ -60,7 +60,7 @@ class Cody {
     }
 
     // Drive
-    static Task* moveAsync(double x, double y, double speed = 40, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD, 
+    static Task* moveAsync(double x, double y, double speed = 50, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
       double transitionDistance = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
 
       addPathPoint(x, y);
@@ -79,12 +79,12 @@ class Cody {
 
       pointer = point;
       orientation = atan2(point.x - firstPoint.x, point.y - firstPoint.y) * (180.0 / M_PI);
-      
+
       // Add point
       pathData.points.push_back(point);
     }
 
-    static Task* followPathAsync(double speed = 40, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD, 
+    static Task* followPathAsync(double speed = 40, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
       double transitionDistance = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
 
       Task* task = new Task("followPath", followPathTask);
@@ -161,7 +161,7 @@ class Cody {
     static void backwards(double distance) {
       forwards(-distance);
     }
-    
+
     static void turn(double degrees) {
       orientation += degrees;
     }
@@ -370,19 +370,19 @@ class Cody {
     static void followPathTask(void* task) {
       FollowPathArgs* args = (FollowPathArgs*)task;
       PursuitData* data = args->data;
-      
+
       // Set first point
       SensorData sensorData = dataProvider->getPulses();
       FusionData fusionData = Fusion::getData(sensorData);
       args->navigationTarget->decelerationDistance = data->lookaheadDistance;
-      
+
       data->lineIndex = 0;
       data->points.insert(data->points.begin(), fusionData.*(args->positionMember));
-      
+
       // Get last segment
       int pointCount = data->points.size();
       Line lastSegment(data->points[pointCount - 2], data->points[pointCount - 1]);
-      
+
       // Transition data
       PursuitData* transitionData = new PursuitData(data->points, args->transitionLookahead, data->lineIndex);
       Vector3 currentTransitionPoint;
@@ -491,10 +491,10 @@ class Cody {
       int pwm = (int)(args->speed * 255.0);
 
       bool zLimit = false;
-      unsigned long msVeryStart = millis();
+      unsigned long msStart = millis();
 
       while (true) {
-        unsigned long msStart = millis();
+        unsigned long msLoop = millis();
 
         SensorData sensorData = dataProvider->getButtons();
         FusionData fusionData = Fusion::getData(sensorData);
@@ -502,12 +502,12 @@ class Cody {
         zLimit = zLimit || sensorData.zLimit;
 
         MotorData xAxis(false, 0);
-        MotorData zAxis(true, zLimit ? 0 : pwm);
+        MotorData zAxis(false, zLimit ? 0 : pwm);
         hardwareProvider->moveToolhead({ xAxis, zAxis });
 
         if (sensorData.zLimit) break;
-        if ((msStart - msVeryStart) >= 1000) break;
-        vTaskDelay(max(1000.0 / HZ - (millis() - msStart), 0.0));
+        if ((msLoop - msStart) >= 1000) break;
+        vTaskDelay(max(1000.0 / HZ - (millis() - msLoop), 0.0));
       }
 
       Fusion::homingComplete();
@@ -525,15 +525,15 @@ class Cody {
       MoveZMsArgs* args = (MoveZMsArgs*)task;
       int pwm = (int)(args->speed * 255.0);
 
-      unsigned long msVeryStart = millis();
+      unsigned long msStart = millis();
 
       while (true) {
-        unsigned long msStart = millis();
+        unsigned long msLoop = millis();
 
         hardwareProvider->moveToolhead({{false, 0}, {args->forwards, pwm}});
 
-        if ((msStart - msVeryStart) >= args->ms) break;
-        vTaskDelay(max(1000.0 / HZ - (millis() - msStart), 0.0));
+        if ((msLoop - msStart) >= args->ms) break;
+        vTaskDelay(max(1000.0 / HZ - (millis() - msLoop), 0.0));
       }
 
       hardwareProvider->moveToolhead({{false, 0}, {false, 0}});
@@ -559,19 +559,19 @@ class Cody {
     static void detectColorTask(void* task) {
       DetectColorArgs* args = (DetectColorArgs*)task;
       PursuitData* data = &pathData;
-      
+
       // Set first point
       SensorData sensorData = dataProvider->getPulses();
       FusionData fusionData = Fusion::getData(sensorData);
       Navigation::drive.decelerationDistance = data->lookaheadDistance;
-      
+
       data->lineIndex = 0;
       data->points.insert(data->points.begin(), fusionData.position);
-      
+
       // Get last segment
       int pointCount = data->points.size();
       Line lastSegment(data->points[pointCount - 2], data->points[pointCount - 1]);
-      
+
       // Transition data
       PursuitData* transitionData = new PursuitData(data->points, args->transitionLookahead, data->lineIndex);
       Vector3 currentTransitionPoint;
@@ -663,7 +663,7 @@ class Cody {
         double acceleration = Navigation::dmap((msLoop - msStart) / args->accelerationMs, 0.0, 1.0, args->minSpeed, args->speed);
         double deceleration = Navigation::dmap(std::abs(error), args->decelerationDegrees, 0.0, args->speed, args->minSpeed);
         double speed = std::min(std::abs(error) <= args->decelerationDegrees ? deceleration : acceleration, args->speed);
-        
+
         // End condition
         if (error > -1.0 && error < 1.0) break;
 
@@ -691,7 +691,7 @@ class Cody {
 
     static void moveToolhead(FusionData fusionData, double speed) {
       ToolheadData toolheadData = Navigation::getToolheadData(fusionData, speed);
-      hardwareProvider->moveToolhead(toolheadData);
+      hardwareProvider->moveToolhead({ toolheadData.xAxisMotor, { false, 0 } });
     }
 
     static void moveWheels(FusionData fusionData, double speed) {
