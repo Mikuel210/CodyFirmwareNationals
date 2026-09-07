@@ -22,12 +22,12 @@
 #endif
 
 // Task parameters
-#define HZ 120.0
+#define HZ 200.0
 
 // Movement
 #define MOVEMENT_ACCELERATION_MS 500.0
 #define MOVEMENT_DECELERATION_MM 250.0
-#define MOVEMENT_MIN_SPEED 25
+#define MOVEMENT_MIN_SPEED 15
 #define MOVEMENT_LOOKAHEAD 100.0
 #define TRANSITION_LOOKAHEAD 250.0
 
@@ -60,7 +60,7 @@ class Cody {
     }
 
     // Drive
-    static Task* moveAsync(double x, double y, double speed = 50, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
+    static Task* moveAsync(double x, double y, double speed = 45, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
       double transitionDistance = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
 
       addPathPoint(x, y);
@@ -84,7 +84,7 @@ class Cody {
       pathData.points.push_back(point);
     }
 
-    static Task* followPathAsync(double speed = 40, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
+    static Task* followPathAsync(double speed = 45, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
       double transitionDistance = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
 
       Task* task = new Task("followPath", followPathTask);
@@ -255,7 +255,7 @@ class Cody {
       return task;
     }
 
-    static Task* moveZMsAsync(double ms, double speed = 100, bool direction = false) {
+    static Task* moveZMsAsync(double ms, double speed = 100, bool direction = true) {
       MoveZMsArgs* args = new MoveZMsArgs();
       Task* task = new Task("moveZMs", moveZMsTask);
 
@@ -269,7 +269,7 @@ class Cody {
     }
 
     static Task* zUpAsync() {
-      return moveZMsAsync(600);
+      return moveZMsAsync(500);
     }
 
     // Wheels
@@ -467,7 +467,7 @@ class Cody {
       while (true) {
         unsigned long msStart = millis();
 
-        SensorData sensorData = dataProvider->getButtons();
+        SensorData sensorData = dataProvider->getData();
         FusionData fusionData = Fusion::getData(sensorData);
 
         xLimit = xLimit || sensorData.xLimit;
