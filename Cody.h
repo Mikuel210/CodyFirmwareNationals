@@ -85,7 +85,7 @@ class Cody {
     }
 
     static Task* followPathAsync(double speed = 45, bool backwards = false, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
-      double transitionDistance = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
+      double transitionDistance = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM, double accelerationMs = MOVEMENT_ACCELERATION_MS) {
 
       Task* task = new Task("followPath", followPathTask);
       FollowPathArgs* args = new FollowPathArgs();
@@ -95,7 +95,7 @@ class Cody {
       args->data = &pathData;
       args->speed = speed / 100.0;
       args->minSpeed = MOVEMENT_MIN_SPEED / 100.0;
-      args->accelerationMs = MOVEMENT_ACCELERATION_MS;
+      args->accelerationMs = accelerationMs;
       args->decelerationMm = decelerationMm;
       args->transitionLookahead = transitionDistance;
       args->positionMember = &FusionData::position;

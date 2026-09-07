@@ -32,10 +32,6 @@
 // Map
 #define MOSAIC_X -520
 #define MOSAIC_Y 830
-#define MOSAIC_X_OFFSET -20
-#define MOSAIC_X_OFFSET_2 0
-#define MOSAIC_Y_OFFSET 10
-#define MOSAIC_Y_OFFSET_2 25
 #define BLOCKS_LINE_DETECT_Y 300
 
 #pragma endregion
@@ -162,8 +158,8 @@ class Program {
         // toolheadTask = Cody::homeAsync();
         toolheadTask = Cody::homeZAsync();
 
-        align(0, -ALIGN_DISTANCE, 1000);
-        Cody::setPosition(START_X, ALIGN_SET_Y, 0);
+        align(-40, -ALIGN_DISTANCE, 1000, 42, 150, 250);
+        Cody::setYOrientation(ALIGN_SET_Y, 0);
 
         // Take vPicture
         toolheadTask->await();
@@ -200,6 +196,7 @@ class Program {
 
         // Pick/leave cycles
         for (int r = 0; r < 2; r++) {
+            // ========== PICK ==========
             toolheadTask = Cody::zUpAsync();
             align(ALIGN_DISTANCE, PICK_Y, 1000);
             Cody::setXOrientation(ALIGN_SET_X, -90);
@@ -236,15 +233,8 @@ class Program {
                 }
             }
 
+            // ========== LEAVE ==========
             // Go to mosaic
-            double leaveX = MOSAIC_X;
-            if (r == 0) leaveX += MOSAIC_X_OFFSET;
-            else leaveX += MOSAIC_X_OFFSET_2;
-
-            double leaveY = MOSAIC_Y;
-            if (r == 0) leaveY += MOSAIC_Y_OFFSET;
-            else leaveY += MOSAIC_Y_OFFSET_2;
-
             align(ALIGN_DISTANCE, PICK_Y);
             Cody::setXOrientation(ALIGN_SET_X, -90);
             Cody::addPathPoint(-40, PICK_Y);
@@ -255,12 +245,49 @@ class Program {
 
             Cody::addPathPoint(-40, PICK_Y);
             Cody::addPathPoint(-40, 400);
-            Cody::addPathPoint(leaveX, 400);
-            Cody::addPathPoint(leaveX, leaveY);
+            Cody::addPathPoint(MOSAIC_X, 400);
+            Cody::addPathPoint(MOSAIC_X, MOSAIC_Y);
             Cody::followPathAsync()->await();
             Cody::rotateToAsync(0)->await();
 
             // Color
+            if (r == 0) {
+                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 3);
+                Cody::followPathAsync()->await();
+
+                for (int meow = 0; meow < 3; meow++) {
+                    totalPicked--;
+                    leave(meow, totalPicked);
+                }
+
+                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 2);
+                Cody::followPathAsync(45, true)->await();
+
+                for (int meow = 0; meow < 3; meow++) {
+                    totalPicked--;
+                    leave(meow, totalPicked);
+                }
+            } else {
+                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 1);
+                Cody::followPathAsync()->await();
+
+                for (int meow = 0; meow < 3; meow++) {
+                    totalPicked--;
+                    leave(meow, totalPicked);
+                }
+
+                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 0);
+                Cody::followPathAsync(45, true)->await();
+
+                for (int meow = 0; meow < 3; meow++) {
+                    totalPicked--;
+                    leave(meow, totalPicked);
+                }
+            }
+
+
+/*
+
             for (int i = 3; i >= 0; i--) {
                 if (pickedCounts[i] == 0) continue;
 
@@ -283,7 +310,8 @@ class Program {
 
                     double targetY = leaveY + BLOCK_DISTANCE_MOSAIC * j;
                     bool backwards = Fusion::getData(Cody::dataProvider->getPulses()).position.y > targetY;
-                    Cody::moveAsync(leaveX, targetY, SLOW_SPEED, backwards, 50, 75, 25)->await();
+                    Cody::addPathPoint(leaveX, targetY);
+                    Cody::followPathAsync(35, backwards, 25, 75, 35, 200)->await();
                     Cody::rotateToAsync(0)->await();
 
                     for (int k : positions)
@@ -298,6 +326,8 @@ class Program {
                     if (totalPicked == 0) break;
                 }
             }
+
+*/
 
             // Carry blocks
             Cody::addPathPoint(MOSAIC_X, 400);
