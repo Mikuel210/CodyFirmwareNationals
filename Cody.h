@@ -336,6 +336,19 @@ class Cody {
       return task;
     }
 
+    static Task* moveMillMsAsync(double ms, bool forwards = true, double speed = 100.0) {
+          Task* task = new Task("moveMillMs", moveMillMsTask);
+          MoveMillMsArgs* args = new MoveMillMsArgs();
+
+          args->task = task;
+          args->ms = ms;
+          args->forwards = !forwards;
+          args->speed = speed / 100.0;
+
+          task->start(args);
+          return task;
+    }
+
     // LED
     static void writeLed(uint8_t value) {
       hardwareProvider->writeLed(value);
@@ -540,6 +553,31 @@ class Cody {
       args->task->stop();
       delete args;
     }
+
+    // Mill
+    struct MoveMillMsArgs : TaskArgs {
+          double ms;
+          bool forwards;
+          double speed;
+        };
+
+        static void moveMillMsTask(void* task) {
+          MoveMillMsArgs* args = (MoveMillMsArgs*)task;
+          unsigned long msStart = millis();
+
+          while (true) {
+            unsigned long msLoop = millis();
+
+            if ((msLoop - msStart) >= args->ms) break;
+            hardwareProvider->moveToolhead({{args->forwards, args->speed * 255.0}, {false, 0}});
+
+            vTaskDelay(max(1000.0 / HZ - (millis() - msStart), 0.0));
+          }
+
+          hardwareProvider->moveToolhead({{false, 0}, {false, 0}});
+          args->task->stop();
+          delete args;
+        }
 
     // Detect color
     struct DetectColorArgs : TaskArgs {

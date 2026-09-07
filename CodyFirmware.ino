@@ -32,21 +32,29 @@
 
 // Setup
 void setup() {
-  Serial.begin(BAUD_RATE);
-  delay(500);
+    Serial.begin(BAUD_RATE);
+    delay(500);
 
-  dataProvider.initialize();
-  hardwareProvider.initialize();
-  Cody::initialize(dataProvider, hardwareProvider);
-  BMS::initialize();
+    dataProvider.initialize();
+    hardwareProvider.initialize();
+    Cody::initialize(dataProvider, hardwareProvider);
+    BMS::initialize();
 
-  #ifdef DEBUG
+#ifdef DEBUG
     plot.Begin();
     plot.AddXYGraph("Position", 1000, "x", plotX, "y", plotY);
-  #endif
+#endif
 
-  waitForButton();
-  Program::go();
+    waitForButton();
+    hardwareProvider.moveToolhead({{true, 100}, {false, 0}});
+    delay(500);
+
+    waitForButton();
+    hardwareProvider.moveToolhead({{false, 0}, {false, 0}});
+    delay(1000);
+
+    waitForButton();
+    Program::go();
 }
 
 void waitForButton() {
