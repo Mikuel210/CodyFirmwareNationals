@@ -46,14 +46,6 @@ void setup() {
 #endif
 
     waitForButton();
-    hardwareProvider.moveToolhead({{true, 100}, {false, 0}});
-    delay(500);
-
-    waitForButton();
-    hardwareProvider.moveToolhead({{false, 0}, {false, 0}});
-    delay(1000);
-
-    waitForButton();
     Program::go();
 }
 

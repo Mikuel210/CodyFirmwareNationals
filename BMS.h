@@ -7,7 +7,7 @@
 #include "Cody.h"
 
 // BMS parameters
-#define BMS_HZ 1 // todo 1
+#define BMS_HZ 1
 #define VOLTAGE_THRESHOLD 3.5
 #define BMS_FREQUENCY 440
 

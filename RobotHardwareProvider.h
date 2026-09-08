@@ -57,10 +57,8 @@ class RobotHardwareProvider : public IHardwareProvider {
       zAxisPwm = getPwm(toolheadData.zAxisMotor, zAxisPwm);
 
       // Move motors
-      //moveMotor({ xAxisPwm > 0 ? true : false, std::abs(xAxisPwm) }, A2_IN_1, A2_IN_2, A2_PWM);
-      //moveMotor({ zAxisPwm > 0 ? true : false, std::abs(zAxisPwm) }, A1_IN_1, A1_IN_2, A1_PWM);
       moveMotor(toolheadData.xAxisMotor, A1_IN_2, A1_IN_1, A1_PWM);
-      moveMotor(toolheadData.zAxisMotor, A2_IN_1, A2_IN_2, A2_PWM);
+      moveMotor(toolheadData.zAxisMotor, A2_IN_2, A2_IN_1, A2_PWM);
     }
 
     void moveWheels(WheelsData wheelsData) override {
@@ -106,9 +104,6 @@ class RobotHardwareProvider : public IHardwareProvider {
 
     int getPwm(MotorData motorData, int pwm) {
       int requestedPwm = motorData.pwm * (motorData.forwards ? 1 : -1);
-      if (requestedPwm > pwm + MAX_PWM_PER_TICK) requestedPwm = pwm + MAX_PWM_PER_TICK;
-      if (requestedPwm < pwm - MAX_PWM_PER_TICK) requestedPwm = pwm - MAX_PWM_PER_TICK;
-
       return requestedPwm;
     }
 };

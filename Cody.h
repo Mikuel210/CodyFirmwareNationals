@@ -304,6 +304,20 @@ class Cody {
       return task;
     }
 
+    static Task* moveWheelsMsAsync(double ms, bool up = true) {
+
+        Task* task = new Task("moveMillMs", moveMillMsTask);
+        MoveMillMsArgs* args = new MoveMillMsArgs();
+
+                  args->task = task;
+                  args->ms = ms;
+                  args->forwards = !forwards;
+                  args->speed = speed / 100.0;
+
+                  task->start(args);
+                  return task;
+    }
+
     // Mill
     static Task* moveMillAsync(double z, double speed = 100, double lookaheadDistance = MILL_LOOKAHEAD) {
       addMillPathPoint(z);
@@ -337,6 +351,7 @@ class Cody {
     }
 
     static Task* moveMillMsAsync(double ms, bool forwards = true, double speed = 100.0) {
+        /*
           Task* task = new Task("moveMillMs", moveMillMsTask);
           MoveMillMsArgs* args = new MoveMillMsArgs();
 
@@ -347,6 +362,7 @@ class Cody {
 
           task->start(args);
           return task;
+          */
     }
 
     // LED
@@ -523,7 +539,7 @@ class Cody {
         vTaskDelay(max(1000.0 / HZ - (millis() - msLoop), 0.0));
       }
 
-      Fusion::homingComplete();
+      Fusion::zHomingComplete();
       args->task->stop();
       delete args;
     }

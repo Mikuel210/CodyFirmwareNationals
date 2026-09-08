@@ -90,6 +90,11 @@ class Fusion {
       previousFusionData.toolheadPosition = Vector3();
     }
 
+    static void zHomingComplete() {
+
+        previousFusionData.toolheadPosition.y = 0;
+    }
+
   private:
     static float deltat;
     static SF fusion;

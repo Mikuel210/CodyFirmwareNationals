@@ -1,6 +1,7 @@
 #pragma once
 #include "Task.h"
 #include "Cody.h"
+#include "GPIO.h"
 
 #pragma region Program Parameters
 
@@ -26,12 +27,12 @@
 // Toolhead
 #define TOOLHEAD_UP 40
 #define TOOLHEAD_DOWN 0
-#define TOOLHEAD_PICK_START_X 10
+#define TOOLHEAD_PICK_START_X 0
 #define TOOLHEAD_LEAVE_START_X 20
 
 // Map
-#define MOSAIC_X -520
-#define MOSAIC_Y 830
+#define MOSAIC_X -570
+#define MOSAIC_Y 850
 #define BLOCKS_LINE_DETECT_Y 300
 
 #pragma endregion
@@ -41,6 +42,7 @@ class Program {
   public:
     static void go() {
         Fusion::restart();
+
         blocks();
         items();
         cement();
@@ -155,14 +157,15 @@ class Program {
 
     static void blocks() {
         // Home and align
-        // toolheadTask = Cody::homeAsync();
-        toolheadTask = Cody::homeZAsync();
+        toolheadTask = Cody::homeAsync();
 
         align(-40, -ALIGN_DISTANCE, 1000, 42, 150, 250);
         Cody::setYOrientation(ALIGN_SET_Y, 0);
 
         // Take vPicture
         toolheadTask->await();
+        Cody::dataProvider->getData();
+        Fusion::homingComplete();
         std::vector<Color> colors = { BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW };
 
         // Initialize variables
@@ -226,7 +229,17 @@ class Program {
 
                     totalPicked++;
                     pickedCounts[i]++;
-                    pick(j % 3, totalPicked);
+
+                    int position = 0;
+
+                    switch (j) {
+                        case 1: position = 1; break;
+                        case 2: position = 2; break;
+                        case 3: position = 2; break;
+                        case 4: position = 1; break;
+                    }
+
+                    pick(position, totalPicked, j > 3 || r == 1);
 
                     if (totalPicked == 6)
                         break;
@@ -251,83 +264,26 @@ class Program {
             Cody::rotateToAsync(0)->await();
 
             // Color
-            if (r == 0) {
-                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 3);
-                Cody::followPathAsync()->await();
+            int position = r == 0 ? 3 : 1;
+            Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * position);
+            Cody::followPathAsync(30)->await();
+            Cody::rotateToAsync(0)->await();
 
-                for (int meow = 0; meow < 3; meow++) {
-                    totalPicked--;
-                    leave(meow, totalPicked);
-                }
-
-                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 2);
-                Cody::followPathAsync(45, true)->await();
-
-                for (int meow = 0; meow < 3; meow++) {
-                    totalPicked--;
-                    leave(meow, totalPicked);
-                }
-            } else {
-                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 1);
-                Cody::followPathAsync()->await();
-
-                for (int meow = 0; meow < 3; meow++) {
-                    totalPicked--;
-                    leave(meow, totalPicked);
-                }
-
-                Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * 0);
-                Cody::followPathAsync(45, true)->await();
-
-                for (int meow = 0; meow < 3; meow++) {
-                    totalPicked--;
-                    leave(meow, totalPicked);
-                }
+            for (int meow = 0; meow < 3; meow++) {
+                totalPicked--;
+                leave(meow, totalPicked);
             }
 
+            SensorData sensorData = Cody::dataProvider->getData();
+            FusionData fusionData = Fusion::getData(sensorData);
+            Cody::addPathPoint(fusionData.position.x, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * (position - 1));
+            Cody::followPathAsync(30, true, 100, 250, 40, 25)->await();
+            Cody::rotateToAsync(0)->await();
 
-/*
-
-            for (int i = 3; i >= 0; i--) {
-                if (pickedCounts[i] == 0) continue;
-
-                Color color =
-                    (i == 0) ? YELLOW :
-                    (i == 1) ? BLUE :
-                    (i == 2) ? GREEN : WHITE;
-
-                // Row
-                for (int j = 3; j >= 0; j--) {
-                    std::vector<int> positions;
-
-                    // Column
-                    for (int k = 0; k < 3; k++) {
-                        if (mosaic[j][k] != color || positionsLeft[j][k]) continue;
-                        positions.push_back(k);
-                    }
-
-                    if (positions.size() == 0) continue;
-
-                    double targetY = leaveY + BLOCK_DISTANCE_MOSAIC * j;
-                    bool backwards = Fusion::getData(Cody::dataProvider->getPulses()).position.y > targetY;
-                    Cody::addPathPoint(leaveX, targetY);
-                    Cody::followPathAsync(35, backwards, 25, 75, 35, 200)->await();
-                    Cody::rotateToAsync(0)->await();
-
-                    for (int k : positions)
-                    {
-                        totalPicked--;
-                        positionsLeft[j][k] = true;
-                        leave(k, totalPicked);
-
-                        if (totalPicked == 0) break;
-                    }
-
-                    if (totalPicked == 0) break;
-                }
+            for (int meow = 0; meow < 3; meow++) {
+                totalPicked--;
+                leave(meow, totalPicked);
             }
-
-*/
 
             // Carry blocks
             Cody::addPathPoint(MOSAIC_X, 400);
@@ -382,16 +338,11 @@ class Program {
     }
 
     // x = 0, z = 1 for first block
-    static void pick(int x, int z) {
-        for (int i = 0; i < x; i++) {
-            Cody::hardwareProvider->writeLed(HIGH);
-            delay(300);
-            Cody::hardwareProvider->writeLed(LOW);
-            delay(300);
-        }
-
+    static void pick(int x, int z, bool force = false) {
         double xPosition = TOOLHEAD_PICK_START_X + BLOCK_DISTANCE_START * x;
-        pickLeave(xPosition, BLOCK_HEIGHT * z);
+        // pickLeave(xPosition, BLOCK_HEIGHT * z);
+        Serial.println(xPosition);
+        pickLeave(xPosition, 0, false, force);
     }
 
     static void leave(int x, int z) {
@@ -403,15 +354,14 @@ class Program {
         }
 
         double xPosition = TOOLHEAD_LEAVE_START_X + BLOCK_DISTANCE_MOSAIC * x;
-        pickLeave(xPosition, BLOCK_HEIGHT * z);
+        // pickLeave(xPosition, BLOCK_HEIGHT * z);
+        pickLeave(xPosition, 0, false);
     }
 
-    static void pickLeave(double xPosition, double zPosition) {
-
-
-      // Cody::moveToolheadAsync(xPosition, 0)->await();
+    static void pickLeave(double xPosition, double wheelsMs, bool wheelsDirection, bool force = false) {
+        if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
       Cody::homeZAsync()->await();
-      // Cody::moveWheelsAsync(zPosition)->await();
+      // Cody::moveWheelsMsAsync(wheelsMs, wheelsDirection)->await();
       Cody::zUpAsync()->await();
     }
 

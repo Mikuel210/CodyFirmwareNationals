@@ -12,7 +12,7 @@
 #define IMU_ADDRESS 0x68
 #define ADS_ADDRESS 0x48
 #define G 9.807
-#define DEG2RAD 0.01745329251f
+#define DEG2RAD 0.01745329251
 
 // Encoders
 #define L_A 26
