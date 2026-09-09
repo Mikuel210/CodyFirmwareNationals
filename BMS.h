@@ -7,7 +7,7 @@
 #include "Cody.h"
 
 // BMS parameters
-#define BMS_HZ 1
+#define BMS_HZ 20
 #define VOLTAGE_THRESHOLD 3.5
 #define BMS_FREQUENCY 440
 
@@ -33,6 +33,7 @@ class BMS {
         if (fusionData.voltage <= VOLTAGE_THRESHOLD)
           Cody::hardwareProvider->toneBuzzer(BMS_FREQUENCY, 1000.0 / BMS_HZ / 2);
 
+        Serial.println(fusionData.toolheadPosition.x);
         vTaskDelay(max(1000.0 / BMS_HZ - (millis() - msStart), 0.0));
       }
 

@@ -17,7 +17,7 @@
 #define ALIGN_MS 2000
 
 // Blocks
-#define FIRST_GROUP_WALL_X_MM -180
+#define FIRST_GROUP_WALL_X_MM -185
 #define BLOCK_GROUPS_INCREMENT -160
 #define BLOCK_DISTANCE_START 64
 #define BLOCK_DISTANCE_MOSAIC 50
@@ -52,107 +52,6 @@ class Program {
     static Task* moveTask;
     static Task* toolheadTask;
     static Task* millTask;
-
-    static void items() {
-        // Align
-        Cody::addPathPoint(-40, 400);
-        Cody::addPathPoint(-250, 400);
-        Cody::followPathAsync()->await();
-
-        align(ALIGN_DISTANCE, 400, 2000);
-        Cody::setXOrientation(ALIGN_SET_X, -90);
-
-        // Carry 1st item
-        Cody::addPathPoint(-60, 400);
-        Cody::addPathPoint(-60, 1000);
-        Cody::followPathAsync(40)->await();
-
-        Cody::addPathPoint(0, 800);
-        Cody::addPathPoint(25, 600);
-        Cody::followPathAsync(40, true, 50, 100)->await();
-
-        // Carry 2nd item
-        Cody::addPathPoint(60, 800);
-        Cody::addPathPoint(60, 1000);
-        Cody::addPathPoint(-35, 1200);
-        Cody::addPathPoint(-35, 1550);
-        Cody::followPathAsync(45, false, 100, 150)->await();
-        Cody::rotateToAsync(-90)->await();
-        Cody::addPathPoint(-200, 1550);
-        Cody::followPathAsync()->await();
-
-        // Carry 3rd item
-        Cody::moveMillMsAsync(250, false);
-        Cody::addPathPoint(0, 1600);
-        Cody::addPathPoint(30, 1500);
-        Cody::followPathAsync(30, true)->await();
-
-        Cody::rotateToAsync(-30, 15)->await();
-
-        Cody::addPathPoint(45, 1300);
-        Cody::addPathPoint(45, 1200);
-        Cody::addPathPoint(-65, 700);
-        Cody::addPathPoint(-100, 500);
-        Cody::addPathPoint(-150, 350);
-        Cody::addPathPoint(-150, 150);
-        Cody::followPathAsync(30, true)->await();
-
-        // Go to white
-        Cody::addPathPoint(-100, 550);
-        Cody::addPathPoint(-15, 725);
-        Cody::addPathPoint(-15, 1250);
-        Cody::addPathPoint(-30, 1400);
-        Cody::addPathPoint(-30, 1525);
-        moveTask = Cody::followPathAsync();
-
-        delay(1000);
-        Cody::moveMillMsAsync(250)->await();
-        moveTask->await();
-
-    }
-
-    static void cement() {
-        // Align
-        Cody::addPathPoint(0, 1750);
-        Cody::addPathPoint(-150, 1700);
-        Cody::followPathAsync()->await();
-
-        align(ALIGN_DISTANCE, 1700, 1500);
-        Cody::setXOrientation(ALIGN_SET_X, -90);
-
-        // Pick green
-        double center = 1015;
-        Cody::addPathPoint(-525, 1700);
-        Cody::followPathAsync()->await();
-        millTask = Cody::moveMillAsync(90);
-        Cody::rotateToAsync(180)->await();
-        Cody::addPathPoint(-525, 1975);
-        Cody::followPathAsync(45, true)->await();
-        millTask->await();
-        Cody::moveMillAsync(0)->await();
-        Cody::addPathPoint(-525, 1130);
-        Cody::followPathAsync()->await();
-        Cody::moveMillAsync(90)->await();
-        Cody::addPathPoint(-525, 1700);
-        Cody::followPathAsync(45, true)->await();
-
-        // Pick yellow
-        Cody::rotateToAsync(-90)->await();
-        Cody::addPathPoint(-780, 1700);
-        Cody::followPathAsync()->await();
-        Cody::rotateToAsync(180)->await();
-        Cody::addPathPoint(-780, 1975);
-        Cody::followPathAsync(45, true)->await();
-        Cody::moveMillAsync(0)->await();
-        Cody::addPathPoint(-780, 1800);
-        Cody::addPathPoint(0, 1800);
-        Cody::addPathPoint(0, 1030);
-        Cody::addPathPoint(-400, 1030);
-        Cody::followPathAsync()->await();
-        Cody::moveMillAsync(90)->await();
-        Cody::addPathPoint(0, 1030);
-        Cody::followPathAsync(45, true)->await();
-    }
 
     static void blocks() {
         // Home and align
@@ -310,45 +209,155 @@ class Program {
         }
     }
 
-    static void pickCement(double x) {
-          millTask = Cody::moveMillMsAsync(500, false, 15.0);
-          Cody::addPathPoint(x, 2105);
+    static void items() {
+        // Align
+        Cody::addPathPoint(-40, 400);
+        Cody::addPathPoint(-250, 400);
+        Cody::followPathAsync()->await();
 
-          moveTask = Cody::followPathAsync(60, true, 100, 250, 50);
-          unsigned int msStart = millis();
+        align(ALIGN_DISTANCE, 400, 2000);
+        Cody::setXOrientation(ALIGN_SET_X, -90);
 
-          while (!(*(moveTask->finished)) && (millis() - msStart) < 1500)
-            delay(10);
+        // Carry first item
+        // Cody::addPathPoint(0, 400);
+        // Cody::followPathAsync()->await();
 
-          delete moveTask->requestStop;
-          moveTask->requestStop = new bool(true);
-          moveTask->await();
-          delete moveTask->requestStop;
+        // millTask = Cody::moveMillAsync(90);
+        // Cody::rotateToAsync(-180)->await();
+        // Cody::addPathPoint(0, 1000);
+        // Cody::followPathAsync(45, true)->await();
+        // millTask->await();
 
-          millTask->await();
-          millTask = Cody::moveMillMsAsync(750, false);
-          moveTask = Cody::moveAsync(x, 1900, 13);
+        // Cody::moveMillAsync(0)->await();
+        // Cody::addPathPoint(25, 400);
+        // Cody::followPathAsync()->await();
 
-          millTask->await();
-          moveTask->await();
-        }
+        // Carry 1st item
+        Cody::addPathPoint(-60, 400);
+        Cody::addPathPoint(-60, 1000);
+        Cody::followPathAsync(40)->await();
 
+        Cody::addPathPoint(0, 800);
+        Cody::addPathPoint(25, 600);
+        Cody::followPathAsync(40, true, 50, 100)->await();
+
+        // Carry second item
+        Cody::addPathPoint(60, 800);
+        Cody::addPathPoint(60, 1000);
+        Cody::addPathPoint(-35, 1200);
+        Cody::followPathAsync()->await();
+        Cody::rotateToAsync(180)->await();
+
+        Cody::addPathPoint(-35, 1200);
+        Cody::addPathPoint(-35, 1650);
+        Cody::followPathAsync(45, true, 100, 150)->await();
+
+        Cody::rotateToAsync(90)->await();
+        Cody::addPathPoint(-100, 1650);
+        Cody::followPathAsync(45, true)->await();
+
+        pause();
+
+        // Carry 2nd item
+        Cody::addPathPoint(60, 800);
+        Cody::addPathPoint(60, 1000);
+        Cody::addPathPoint(-35, 1200);
+        Cody::addPathPoint(-35, 1550);
+        Cody::followPathAsync(45, false, 100, 150)->await();
+        Cody::rotateToAsync(-90)->await();
+        Cody::addPathPoint(-200, 1550);
+        Cody::followPathAsync()->await();
+
+        // Carry 3rd item
+        Cody::moveMillMsAsync(250, false);
+        Cody::addPathPoint(0, 1600);
+        Cody::addPathPoint(30, 1500);
+        Cody::followPathAsync(30, true)->await();
+
+        Cody::rotateToAsync(-30, 15)->await();
+
+        Cody::addPathPoint(45, 1300);
+        Cody::addPathPoint(45, 1200);
+        Cody::addPathPoint(-65, 700);
+        Cody::addPathPoint(-100, 500);
+        Cody::addPathPoint(-150, 350);
+        Cody::addPathPoint(-150, 150);
+        Cody::followPathAsync(30, true)->await();
+
+        // Go to white
+        Cody::addPathPoint(-100, 550);
+        Cody::addPathPoint(-15, 725);
+        Cody::addPathPoint(-15, 1250);
+        Cody::addPathPoint(-30, 1400);
+        Cody::addPathPoint(-30, 1525);
+        moveTask = Cody::followPathAsync();
+
+        delay(1000);
+        Cody::moveMillMsAsync(250)->await();
+        moveTask->await();
+
+    }
+
+    static void cement() {
+        // Align
+        Cody::addPathPoint(0, 1750);
+        Cody::addPathPoint(-150, 1700);
+        Cody::followPathAsync()->await();
+
+        align(ALIGN_DISTANCE, 1700, 1500);
+        Cody::setXOrientation(ALIGN_SET_X, -90);
+
+        // Pick green
+        double center = 1015;
+        Cody::addPathPoint(-525, 1700);
+        Cody::followPathAsync()->await();
+        millTask = Cody::moveMillAsync(90);
+        Cody::rotateToAsync(180)->await();
+        Cody::addPathPoint(-525, 1975);
+        Cody::followPathAsync(45, true)->await();
+        millTask->await();
+        Cody::moveMillAsync(0)->await();
+        Cody::addPathPoint(-525, 1130);
+        Cody::followPathAsync()->await();
+        Cody::moveMillAsync(90)->await();
+        Cody::addPathPoint(-525, 1700);
+        Cody::followPathAsync(45, true)->await();
+
+        // Pick yellow
+        Cody::rotateToAsync(-90)->await();
+        Cody::addPathPoint(-780, 1700);
+        Cody::followPathAsync()->await();
+        Cody::rotateToAsync(180)->await();
+        Cody::addPathPoint(-780, 1975);
+        Cody::followPathAsync(45, true)->await();
+        Cody::moveMillAsync(0)->await();
+        Cody::addPathPoint(-780, 1800);
+        Cody::addPathPoint(0, 1800);
+        Cody::addPathPoint(0, 1030);
+        Cody::addPathPoint(-400, 1030);
+        Cody::followPathAsync()->await();
+        Cody::moveMillAsync(90)->await();
+        Cody::addPathPoint(0, 1030);
+        Cody::followPathAsync(45, true)->await();
+    }
+
+    // Helpers
     static void align(double x, double y, int ms = ALIGN_MS, double speed = ALIGN_SPEED, double lookaheadDistance = MOVEMENT_LOOKAHEAD,
-      double transitionLookahead = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
+        double transitionLookahead = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
 
-      Cody::addPathPoint(x, y);
-      moveTask = Cody::followPathAsync(speed, true, lookaheadDistance, transitionLookahead, decelerationMm);
-      delay(ms);
+        Cody::addPathPoint(x, y);
+        moveTask = Cody::followPathAsync(speed, true, lookaheadDistance, transitionLookahead, decelerationMm);
+        delay(ms);
 
-      delete moveTask->requestStop;
-      moveTask->requestStop = new bool(true);
-      moveTask->await();
+        delete moveTask->requestStop;
+        moveTask->requestStop = new bool(true);
+        moveTask->await();
     }
 
     // x = 0, z = 1 for first block
     static void pick(int x, int z, bool force = false) {
         double xPosition = TOOLHEAD_PICK_START_X + BLOCK_DISTANCE_START * x;
-        pickLeave(xPosition, 1000, true, force);
+        pickLeave(xPosition, 2000, true, force, true);
     }
 
     static void leave(int x, int z) {
@@ -360,18 +369,19 @@ class Program {
         }
 
         double xPosition = TOOLHEAD_LEAVE_START_X + BLOCK_DISTANCE_MOSAIC * x;
-        pickLeave(xPosition, 1000, false);
+        pickLeave(xPosition, 1000, false, false);
     }
 
-    static void pickLeave(double xPosition, double wheelsMs, bool wheelsUp, bool force = false) {
+    static void pickLeave(double xPosition, double wheelsMs, bool wheelsUp, bool force = false, bool asyncWheels = false) {
         if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
-      Cody::homeZAsync()->await();
-      Cody::moveWheelsMsAsync(wheelsMs, wheelsUp)->await();
-      Cody::zUpAsync()->await();
+        if (asyncWheels) millTask = Cody::moveWheelsMsAsync(wheelsMs, wheelsUp);
+        Cody::homeZAsync()->await();
+        if (!asyncWheels) Cody::moveWheelsMsAsync(wheelsMs, wheelsUp)->await();
+        Cody::zUpAsync()->await();
+        if (asyncWheels) millTask->await();
     }
 
-    static void pause()
-    {
+    static void pause() {
       delay(999999999);
     }
 };

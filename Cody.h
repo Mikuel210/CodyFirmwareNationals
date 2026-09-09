@@ -269,7 +269,7 @@ class Cody {
     }
 
     static Task* zUpAsync() {
-      return moveZMsAsync(1200);
+      return moveZMsAsync(900);
     }
 
     // Wheels

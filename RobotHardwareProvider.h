@@ -57,7 +57,7 @@ class RobotHardwareProvider : public IHardwareProvider {
       zAxisPwm = getPwm(toolheadData.zAxisMotor, zAxisPwm);
 
       // Move motors
-      moveMotor(toolheadData.xAxisMotor, A1_IN_2, A1_IN_1, A1_PWM);
+      moveMotor(toolheadData.xAxisMotor, A1_IN_1, A1_IN_2, A1_PWM);
       moveMotor(toolheadData.zAxisMotor, A2_IN_2, A2_IN_1, A2_PWM);
     }
 
