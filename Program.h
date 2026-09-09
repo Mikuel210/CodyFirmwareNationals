@@ -31,7 +31,7 @@
 #define TOOLHEAD_LEAVE_START_X 20
 
 // Map
-#define MOSAIC_X -540
+#define MOSAIC_X -535
 #define MOSAIC_Y 850
 #define BLOCKS_LINE_DETECT_Y 300
 
@@ -137,7 +137,7 @@ class Program {
                         case 4: position = 1; break;
                     }
 
-                    pick(position, totalPicked, j > 3 || r == 1);
+                    pick(position, totalPicked, j > 3 || r == 1, j == 5);
 
                     if (totalPicked == 6)
                         break;
@@ -354,9 +354,10 @@ class Program {
     }
 
     // x = 0, z = 1 for first block
-    static void pick(int x, int z, bool force = false) {
+    static void pick(int x, int z, bool force = false, bool isLast = false) {
         double xPosition = TOOLHEAD_PICK_START_X + BLOCK_DISTANCE_START * x;
-        pickLeave(xPosition, 2000, true, force, true);
+        if (!isLast) pickLeave(xPosition, 2000, true, force, true);
+        else pickLeave(xPosition, 1000, true, force, true);
     }
 
     static void leave(int x, int z, bool force = false) {
@@ -367,7 +368,7 @@ class Program {
             delay(300);
         }
 
-        double xPosition = TOOLHEAD_LEAVE_START_X + BLOCK_DISTANCE_MOSAIC * x;
+        double xPosition = TOOLHEAD_LEAVE_START_X + 66 * x;
         // pickLeave(xPosition, 1000, false, false);
 
         if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
