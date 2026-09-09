@@ -40,7 +40,7 @@ class Fusion {
       double deltaY = deltaDistanceMm * cos(averageOrientation * DEG_TO_RAD);
 
       // Get toolhead position
-      double toolheadDeltaX = (sensorData.xAxisPulses - previousSensorData.xAxisPulses) * X_AXIS_MM_PER_REVOLUTION / N20_TICKS_PER_REVOLUTION;
+      double toolheadDeltaX = (sensorData.xAxisPulses - previousSensorData.xAxisPulses) * X_AXIS_MM_PER_REVOLUTION / N20_TICKS_PER_REVOLUTION / 2;
       double toolheadDeltaZ = (sensorData.zAxisPulses - previousSensorData.zAxisPulses) * Z_AXIS_MM_PER_REVOLUTION / N20_TICKS_PER_REVOLUTION;
 
       // Get wheels position

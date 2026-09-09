@@ -17,9 +17,9 @@
 #define ALIGN_MS 2000
 
 // Blocks
-#define FIRST_GROUP_WALL_X_MM -185
+#define FIRST_GROUP_WALL_X_MM -190
 #define BLOCK_GROUPS_INCREMENT -160
-#define BLOCK_DISTANCE_START 64
+#define BLOCK_DISTANCE_START 85
 #define BLOCK_DISTANCE_MOSAIC 50
 #define BLOCK_HEIGHT 30
 #define PICK_Y 20
@@ -31,7 +31,7 @@
 #define TOOLHEAD_LEAVE_START_X 20
 
 // Map
-#define MOSAIC_X -560
+#define MOSAIC_X -540
 #define MOSAIC_Y 850
 #define BLOCKS_LINE_DETECT_Y 300
 
@@ -61,7 +61,6 @@ class Program {
         Cody::setYOrientation(ALIGN_SET_Y, 0);
 
         // Take vPicture
-        toolheadTask->await();
         Cody::dataProvider->getData();
         Fusion::homingComplete();
         std::vector<Color> colors = { BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW };
@@ -94,6 +93,7 @@ class Program {
         Cody::addPathPoint(0, PICK_Y);
         Cody::followPathAsync()->await();
         Cody::rotateToAsync(-90)->await();
+        toolheadTask->await();
 
         // Pick/leave cycles
         for (int r = 0; r < 2; r++) {
@@ -120,7 +120,7 @@ class Program {
                 {
                     if (j == 3)
                     {
-                        Cody::addPathPoint(pickX - BLOCK_DISTANCE_START, PICK_Y);
+                        Cody::addPathPoint(pickX - 57, PICK_Y);
                         Cody::followPathAsync(SLOW_SPEED, false, 50, 75, 100)->await();
                         Cody::rotateToAsync(-90)->await();
                     }
@@ -161,9 +161,8 @@ class Program {
             toolheadTask->await();
             toolheadTask = Cody::zUpAsync();
 
-            Cody::addPathPoint(-40, PICK_Y);
-            Cody::addPathPoint(-40, 400);
-            Cody::addPathPoint(mosaicX, 400);
+            Cody::addPathPoint(-40, 300);
+            Cody::addPathPoint(mosaicX, 300);
             Cody::addPathPoint(mosaicX, MOSAIC_Y);
             Cody::followPathAsync()->await();
             Cody::rotateToAsync(0)->await();
@@ -189,7 +188,7 @@ class Program {
 
             for (int meow = 0; meow < 3; meow++) {
                 totalPicked--;
-                leave(meow, totalPicked);
+                leave(meow, totalPicked, true);
             }
 
             // Carry blocks
@@ -360,7 +359,7 @@ class Program {
         pickLeave(xPosition, 2000, true, force, true);
     }
 
-    static void leave(int x, int z) {
+    static void leave(int x, int z, bool force = false) {
         for (int i = 0; i < x; i++) {
             Cody::hardwareProvider->writeLed(HIGH);
             delay(300);
@@ -369,7 +368,10 @@ class Program {
         }
 
         double xPosition = TOOLHEAD_LEAVE_START_X + BLOCK_DISTANCE_MOSAIC * x;
-        pickLeave(xPosition, 1000, false, false);
+        // pickLeave(xPosition, 1000, false, false);
+
+        if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
+        Cody::moveWheelsMsAsync(900, false)->await();
     }
 
     static void pickLeave(double xPosition, double wheelsMs, bool wheelsUp, bool force = false, bool asyncWheels = false) {
