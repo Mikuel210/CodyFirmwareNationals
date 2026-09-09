@@ -269,7 +269,7 @@ class Cody {
     }
 
     static Task* zUpAsync() {
-      return moveZMsAsync(500);
+      return moveZMsAsync(1200);
     }
 
     // Wheels
@@ -305,17 +305,15 @@ class Cody {
     }
 
     static Task* moveWheelsMsAsync(double ms, bool up = true) {
+        Task* task = new Task("moveWheelsMs", moveWheelsMsTask);
+        MoveWheelsMsArgs* args = new MoveWheelsMsArgs();
 
-        Task* task = new Task("moveMillMs", moveMillMsTask);
-        MoveMillMsArgs* args = new MoveMillMsArgs();
+        args->task = task;
+        args->ms = ms;
+        args->up = up;
 
-                  args->task = task;
-                  args->ms = ms;
-                  args->forwards = !forwards;
-                  args->speed = speed / 100.0;
-
-                  task->start(args);
-                  return task;
+        task->start(args);
+        return task;
     }
 
     // Mill
@@ -575,25 +573,25 @@ class Cody {
           double ms;
           bool forwards;
           double speed;
-        };
+    };
 
-        static void moveMillMsTask(void* task) {
-          MoveMillMsArgs* args = (MoveMillMsArgs*)task;
-          unsigned long msStart = millis();
+    static void moveMillMsTask(void* task) {
+        MoveMillMsArgs* args = (MoveMillMsArgs*)task;
+        unsigned long msStart = millis();
 
-          while (true) {
-            unsigned long msLoop = millis();
+        while (true) {
+        unsigned long msLoop = millis();
 
-            if ((msLoop - msStart) >= args->ms) break;
-            hardwareProvider->moveToolhead({{args->forwards, args->speed * 255.0}, {false, 0}});
+        if ((msLoop - msStart) >= args->ms) break;
+        hardwareProvider->moveToolhead({{args->forwards, args->speed * 255.0}, {false, 0}});
 
-            vTaskDelay(max(1000.0 / HZ - (millis() - msStart), 0.0));
-          }
-
-          hardwareProvider->moveToolhead({{false, 0}, {false, 0}});
-          args->task->stop();
-          delete args;
+        vTaskDelay(max(1000.0 / HZ - (millis() - msStart), 0.0));
         }
+
+        hardwareProvider->moveToolhead({{false, 0}, {false, 0}});
+        args->task->stop();
+        delete args;
+    }
 
     // Detect color
     struct DetectColorArgs : TaskArgs {
@@ -730,6 +728,30 @@ class Cody {
       stopRobot();
       args->task->stop();
       delete args;
+    }
+
+    // Wheels
+    struct MoveWheelsMsArgs : TaskArgs {
+              double ms;
+              bool up;
+        };
+
+    static void moveWheelsMsTask(void* task) {
+        MoveWheelsMsArgs* args = (MoveWheelsMsArgs*)task;
+        unsigned long msStart = millis();
+
+        while (true) {
+            unsigned long msLoop = millis();
+
+            if ((msLoop - msStart) >= args->ms) break;
+            hardwareProvider->moveWheels({{!(args->up), 255}});
+
+            vTaskDelay(max(1000.0 / HZ - (millis() - msStart), 0.0));
+        }
+
+        hardwareProvider->moveWheels({{false, 0}});
+        args->task->stop();
+        delete args;
     }
 
     // Move functions

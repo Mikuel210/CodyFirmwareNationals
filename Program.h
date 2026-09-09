@@ -31,7 +31,7 @@
 #define TOOLHEAD_LEAVE_START_X 20
 
 // Map
-#define MOSAIC_X -570
+#define MOSAIC_X -560
 #define MOSAIC_Y 850
 #define BLOCKS_LINE_DETECT_Y 300
 
@@ -124,15 +124,15 @@ class Program {
         double center = 1015;
         Cody::addPathPoint(-525, 1700);
         Cody::followPathAsync()->await();
-        millTask = Cody::moveMillMsAsync(200, false);
+        millTask = Cody::moveMillAsync(90);
         Cody::rotateToAsync(180)->await();
         Cody::addPathPoint(-525, 1975);
         Cody::followPathAsync(45, true)->await();
         millTask->await();
-        Cody::moveMillMsAsync(600)->await();
+        Cody::moveMillAsync(0)->await();
         Cody::addPathPoint(-525, 1130);
         Cody::followPathAsync()->await();
-        Cody::moveMillMsAsync(600, false)->await();
+        Cody::moveMillAsync(90)->await();
         Cody::addPathPoint(-525, 1700);
         Cody::followPathAsync(45, true)->await();
 
@@ -143,17 +143,16 @@ class Program {
         Cody::rotateToAsync(180)->await();
         Cody::addPathPoint(-780, 1975);
         Cody::followPathAsync(45, true)->await();
-        Cody::moveMillMsAsync(600)->await();
+        Cody::moveMillAsync(0)->await();
         Cody::addPathPoint(-780, 1800);
         Cody::addPathPoint(0, 1800);
         Cody::addPathPoint(0, 1030);
         Cody::addPathPoint(-400, 1030);
         Cody::followPathAsync()->await();
-        Cody::moveMillMsAsync(600, false)->await();
+        Cody::moveMillAsync(90)->await();
         Cody::addPathPoint(0, 1030);
         Cody::followPathAsync(45, true)->await();
-
-        }
+    }
 
     static void blocks() {
         // Home and align
@@ -248,6 +247,10 @@ class Program {
 
             // ========== LEAVE ==========
             // Go to mosaic
+            double mosaicX = MOSAIC_X;
+            if (r == 1) mosaicX += 20;
+
+            toolheadTask = Cody::homeAsync();
             align(ALIGN_DISTANCE, PICK_Y);
             Cody::setXOrientation(ALIGN_SET_X, -90);
             Cody::addPathPoint(-40, PICK_Y);
@@ -256,16 +259,21 @@ class Program {
             align(-40, -ALIGN_DISTANCE, 1000);
             Cody::setYOrientation(ALIGN_SET_Y, 0);
 
+            toolheadTask->await();
+            toolheadTask = Cody::zUpAsync();
+
             Cody::addPathPoint(-40, PICK_Y);
             Cody::addPathPoint(-40, 400);
-            Cody::addPathPoint(MOSAIC_X, 400);
-            Cody::addPathPoint(MOSAIC_X, MOSAIC_Y);
+            Cody::addPathPoint(mosaicX, 400);
+            Cody::addPathPoint(mosaicX, MOSAIC_Y);
             Cody::followPathAsync()->await();
             Cody::rotateToAsync(0)->await();
 
+            toolheadTask->await();
+
             // Color
             int position = r == 0 ? 3 : 1;
-            Cody::addPathPoint(MOSAIC_X, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * position);
+            Cody::addPathPoint(mosaicX, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * position);
             Cody::followPathAsync(30)->await();
             Cody::rotateToAsync(0)->await();
 
@@ -286,7 +294,7 @@ class Program {
             }
 
             // Carry blocks
-            Cody::addPathPoint(MOSAIC_X, 400);
+            Cody::addPathPoint(mosaicX, 400);
             Cody::addPathPoint(-40, 400);
             align(-40, -ALIGN_DISTANCE, 5000, 42, 150, 250);
             Cody::setYOrientation(ALIGN_SET_Y, 0);
@@ -340,9 +348,7 @@ class Program {
     // x = 0, z = 1 for first block
     static void pick(int x, int z, bool force = false) {
         double xPosition = TOOLHEAD_PICK_START_X + BLOCK_DISTANCE_START * x;
-        // pickLeave(xPosition, BLOCK_HEIGHT * z);
-        Serial.println(xPosition);
-        pickLeave(xPosition, 0, false, force);
+        pickLeave(xPosition, 1000, true, force);
     }
 
     static void leave(int x, int z) {
@@ -354,14 +360,13 @@ class Program {
         }
 
         double xPosition = TOOLHEAD_LEAVE_START_X + BLOCK_DISTANCE_MOSAIC * x;
-        // pickLeave(xPosition, BLOCK_HEIGHT * z);
-        pickLeave(xPosition, 0, false);
+        pickLeave(xPosition, 1000, false);
     }
 
-    static void pickLeave(double xPosition, double wheelsMs, bool wheelsDirection, bool force = false) {
+    static void pickLeave(double xPosition, double wheelsMs, bool wheelsUp, bool force = false) {
         if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
       Cody::homeZAsync()->await();
-      // Cody::moveWheelsMsAsync(wheelsMs, wheelsDirection)->await();
+      Cody::moveWheelsMsAsync(wheelsMs, wheelsUp)->await();
       Cody::zUpAsync()->await();
     }
 
