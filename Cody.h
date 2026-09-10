@@ -27,7 +27,7 @@
 // Movement
 #define MOVEMENT_ACCELERATION_MS 500.0
 #define MOVEMENT_DECELERATION_MM 250.0
-#define MOVEMENT_MIN_SPEED 15
+#define MOVEMENT_MIN_SPEED 17.0
 #define MOVEMENT_LOOKAHEAD 100.0
 #define TRANSITION_LOOKAHEAD 250.0
 
@@ -243,6 +243,17 @@ class Cody {
       task->start(args);
       return task;
     }
+
+    static Task* homeXAsync(double speed = 100) {
+          HomeArgs* args = new HomeArgs();
+          Task* task = new Task("homeX", homeXTask);
+
+          args->task = task;
+          args->speed = speed / 100.0;
+
+          task->start(args);
+          return task;
+        }
 
     static Task* homeZAsync(double speed = 100) {
       HomeArgs* args = new HomeArgs();
@@ -512,6 +523,36 @@ class Cody {
       args->task->stop();
       delete args;
     }
+
+    static void homeXTask(void* task) {
+          HomeArgs* args = (HomeArgs*)task;
+          int pwm = (int)(args->speed * 255.0);
+
+          bool xLimit = false;
+          unsigned long msStart = millis();
+
+          while (true) {
+            unsigned long msLoop = millis();
+
+            SensorData sensorData = dataProvider->getButtons();
+            FusionData fusionData = Fusion::getData(sensorData);
+
+            xLimit = xLimit || sensorData.xLimit;
+
+            MotorData zAxis(false, 0);
+            MotorData xAxis(false, xLimit ? 0 : pwm);
+            hardwareProvider->moveToolhead({ xAxis, zAxis });
+
+            if (sensorData.xLimit) break;
+            if ((msLoop - msStart) >= 1000) break;
+            vTaskDelay(max(1000.0 / HZ - (millis() - msLoop), 0.0));
+          }
+
+          Fusion::xHomingComplete();
+          args->task->stop();
+          delete args;
+        }
+
 
     static void homeZTask(void* task) {
       HomeArgs* args = (HomeArgs*)task;

@@ -8,7 +8,7 @@
 // Note: 0, 0 is the center of the start area
 
 // General
-#define SLOW_SPEED 19
+#define SLOW_SPEED 20
 #define START_X 4
 #define ALIGN_SET_X 48
 #define ALIGN_SET_Y -48
@@ -19,7 +19,7 @@
 // Blocks
 #define FIRST_GROUP_WALL_X_MM -190
 #define BLOCK_GROUPS_INCREMENT -160
-#define BLOCK_DISTANCE_START 85
+#define BLOCK_DISTANCE_START 78
 #define BLOCK_DISTANCE_MOSAIC 50
 #define BLOCK_HEIGHT 30
 #define PICK_Y 20
@@ -32,7 +32,7 @@
 
 // Map
 #define MOSAIC_X -535
-#define MOSAIC_Y 850
+#define MOSAIC_Y 855
 #define BLOCKS_LINE_DETECT_Y 300
 
 #pragma endregion
@@ -147,7 +147,8 @@ class Program {
             // ========== LEAVE ==========
             // Go to mosaic
             double mosaicX = MOSAIC_X;
-            if (r == 1) mosaicX += 20;
+            if (r == 0) mosaicX += 5;
+            else mosaicX += 20;
 
             toolheadTask = Cody::homeAsync();
             align(ALIGN_DISTANCE, PICK_Y);
@@ -163,7 +164,7 @@ class Program {
 
             Cody::addPathPoint(-40, 300);
             Cody::addPathPoint(mosaicX, 300);
-            Cody::addPathPoint(mosaicX, MOSAIC_Y);
+            Cody::addPathPoint(mosaicX, MOSAIC_Y - 50);
             Cody::followPathAsync()->await();
             Cody::rotateToAsync(0)->await();
 
@@ -182,7 +183,7 @@ class Program {
 
             SensorData sensorData = Cody::dataProvider->getData();
             FusionData fusionData = Fusion::getData(sensorData);
-            Cody::addPathPoint(fusionData.position.x, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * (position - 1));
+            Cody::addPathPoint(fusionData.position.x, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * (position - 1) + 10);
             Cody::followPathAsync(30, true, 100, 250, 40, 25)->await();
             Cody::rotateToAsync(0)->await();
 
@@ -192,13 +193,15 @@ class Program {
             }
 
             // Carry blocks
+            Cody::addPathPoint(mosaicX, 550);
+            Cody::followPathAsync(45, true)->await();
+            delay(100);
+            toolheadTask = Cody::homeAsync();
             Cody::addPathPoint(mosaicX, 400);
             Cody::addPathPoint(-40, 400);
             align(-40, -ALIGN_DISTANCE, 5000, 42, 150, 250);
             Cody::setYOrientation(ALIGN_SET_Y, 0);
-
             toolheadTask->await();
-            toolheadTask = Cody::homeZAsync();
 
             if (r == 1) break;
 
@@ -361,24 +364,18 @@ class Program {
     }
 
     static void leave(int x, int z, bool force = false) {
-        for (int i = 0; i < x; i++) {
-            Cody::hardwareProvider->writeLed(HIGH);
-            delay(300);
-            Cody::hardwareProvider->writeLed(LOW);
-            delay(300);
-        }
-
         double xPosition = TOOLHEAD_LEAVE_START_X + 66 * x;
         // pickLeave(xPosition, 1000, false, false);
 
         if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
-        Cody::moveWheelsMsAsync(900, false)->await();
+        Cody::moveWheelsMsAsync(675, false)->await();
     }
 
     static void pickLeave(double xPosition, double wheelsMs, bool wheelsUp, bool force = false, bool asyncWheels = false) {
         if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
         if (asyncWheels) millTask = Cody::moveWheelsMsAsync(wheelsMs, wheelsUp);
         Cody::homeZAsync()->await();
+        delay(250);
         if (!asyncWheels) Cody::moveWheelsMsAsync(wheelsMs, wheelsUp)->await();
         Cody::zUpAsync()->await();
         if (asyncWheels) millTask->await();
