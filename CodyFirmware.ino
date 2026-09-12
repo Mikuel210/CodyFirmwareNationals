@@ -46,6 +46,11 @@ void setup() {
 #endif
 
     waitForButton();
+    Cody::homeAsync()->await();
+    Fusion::homingComplete();
+    double xPosition = TOOLHEAD_PICK_START_X + BLOCK_DISTANCE_START * 2;
+    Cody::moveToolheadAsync(xPosition, 0)->await();
+    waitForButton();
     Program::go();
 }
 

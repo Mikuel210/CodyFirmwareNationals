@@ -8,7 +8,7 @@
 // Note: 0, 0 is the center of the start area
 
 // General
-#define SLOW_SPEED 20
+#define SLOW_SPEED 25
 #define START_X 4
 #define ALIGN_SET_X 48
 #define ALIGN_SET_Y -48
@@ -17,7 +17,7 @@
 #define ALIGN_MS 2000
 
 // Blocks
-#define FIRST_GROUP_WALL_X_MM -190
+#define FIRST_GROUP_WALL_X_MM -185
 #define BLOCK_GROUPS_INCREMENT -160
 #define BLOCK_DISTANCE_START 83
 #define BLOCK_DISTANCE_MOSAIC 50
@@ -55,14 +55,10 @@ class Program {
 
     static void blocks() {
         // Home and align
-        toolheadTask = Cody::homeAsync();
-
         align(-40, -ALIGN_DISTANCE, 1000, 42, 150, 250);
         Cody::setYOrientation(ALIGN_SET_Y, 0);
 
         // Take vPicture
-        Cody::dataProvider->getData();
-        Fusion::homingComplete();
         std::vector<Color> colors = { BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW };
 
         // Initialize variables
@@ -93,7 +89,6 @@ class Program {
         Cody::addPathPoint(0, PICK_Y);
         Cody::followPathAsync()->await();
         Cody::rotateToAsync(-90)->await();
-        toolheadTask->await();
 
         // Pick/leave cycles
         for (int r = 0; r < 2; r++) {
@@ -118,23 +113,28 @@ class Program {
 
                 for (int j = pickedCounts[i]; j < colorCounts[i]; j++)
                 {
-                    if (j == 3)
-                    {
+                    if (j == 1 || j == 5) {
                         Cody::addPathPoint(pickX - 57, PICK_Y);
                         Cody::followPathAsync(SLOW_SPEED, false, 50, 75, 100)->await();
+                        Cody::rotateToAsync(-90)->await();
+                    }
+
+                    if (j == 3) {
+                        Cody::addPathPoint(pickX + 5, PICK_Y);
+                        Cody::followPathAsync(SLOW_SPEED, true, 50, 75, 100)->await();
                         Cody::rotateToAsync(-90)->await();
                     }
 
                     totalPicked++;
                     pickedCounts[i]++;
 
-                    int position = 0;
+                    int position = 2;
 
                     switch (j) {
-                        case 1: position = 1; break;
-                        case 2: position = 2; break;
-                        case 3: position = 2; break;
-                        case 4: position = 1; break;
+                        case 2: position = 1; break;
+                        case 3: position = 1; break;
+                        case 4: position = 0; break;
+                        case 5: position = 0; break;
                     }
 
                     pick(position, totalPicked, j > 3 || r == 1, j == 5);
@@ -150,19 +150,30 @@ class Program {
             if (r == 0) mosaicX += 5;
             else mosaicX += 5;
 
-            toolheadTask = Cody::homeAsync();
             align(ALIGN_DISTANCE, PICK_Y);
             Cody::setXOrientation(ALIGN_SET_X, -90);
+            toolheadTask = Cody::homeAsync();
             Cody::addPathPoint(-40, PICK_Y);
             Cody::followPathAsync()->await();
             Cody::rotateToAsync(0)->await();
             align(-40, -ALIGN_DISTANCE, 1000);
             Cody::setYOrientation(ALIGN_SET_Y, 0);
 
+            Cody::addPathPoint(-40, 300);
+            Cody::addPathPoint(mosaicX + 200, 300);
+            Cody::followPathAsync()->await();
+
+            Cody::addPathPoint(mosaicX - 200, 300);
+            moveTask = Cody::followPathAsync(25);
+            Cody::detectColorAsync(BLACK, moveTask)->await();
+            moveTask->await();
+            Cody::setX(mosaicX - 80);
+
+            pause();
+
             toolheadTask->await();
             toolheadTask = Cody::zUpAsync();
 
-            Cody::addPathPoint(-40, 300);
             Cody::addPathPoint(mosaicX, 300);
             Cody::addPathPoint(mosaicX, MOSAIC_Y - 50);
             Cody::followPathAsync()->await();

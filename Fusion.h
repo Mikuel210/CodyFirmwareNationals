@@ -71,7 +71,23 @@ class Fusion {
     }
 
     static void restart() {
-      previousFusionData = FusionData();
+      previousFusionData.orientation = 0;
+      previousFusionData.position = Vector3();
+      previousFusionData.wheelsPosition = Vector3();
+      previousFusionData.millPosition = Vector3();
+
+      /*
+
+
+          float orientation;
+          Vector3 position;
+
+          Vector3 toolheadPosition;
+          Vector3 wheelsPosition;
+          Vector3 millPosition;
+
+
+          */
     }
 
     static void setX(double x) {

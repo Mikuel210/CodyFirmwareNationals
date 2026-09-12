@@ -33,9 +33,16 @@ class BMS {
         if (fusionData.voltage <= VOLTAGE_THRESHOLD)
           Cody::hardwareProvider->toneBuzzer(BMS_FREQUENCY, 1000.0 / BMS_HZ / 2);
 
+
+        // Serial.print(sensorData.colorData.r); Serial.print(", ");
+        // Serial.print(sensorData.colorData.g); Serial.print(", ");
+        // Serial.print(sensorData.colorData.b); Serial.print(", || ");
+        // Serial.println(fusionData.color);
         Serial.println(fusionData.toolheadPosition.x);
+
         vTaskDelay(max(1000.0 / BMS_HZ - (millis() - msStart), 0.0));
       }
+
 
       args->task->stop();
       delete args;

@@ -109,24 +109,12 @@ class Cody {
       return task;
     }
 
-    static Task* detectColorAsync(int transitionMs, double startSpeed = 40, double endSpeed = 15, bool backwards = false, Color color = BLACK,
-      double lookaheadDistance = MOVEMENT_LOOKAHEAD, double transitionDistance = TRANSITION_LOOKAHEAD, double decelerationMm = MOVEMENT_DECELERATION_MM) {
-
+    static Task* detectColorAsync(Color color, Task* moveTask) {
       Task* task = new Task("detectColor", detectColorTask);
       DetectColorArgs* args = new DetectColorArgs();
-      pathData.lookaheadDistance = lookaheadDistance;
 
       args->task = task;
-      args->transitionMs = transitionMs;
-      args->startSpeed = startSpeed / 100.0;
-      args->endSpeed = endSpeed / 100.0;
-      args->minSpeed = MOVEMENT_MIN_SPEED / 100.0;
-      args->accelerationMs = MOVEMENT_ACCELERATION_MS;
-      args->decelerationMm = decelerationMm;
-      args->transitionLookahead = transitionDistance;
-
-      if (backwards) args->moveFunction = &moveRobotBackwards;
-      else args->moveFunction = &moveRobot;
+      args->moveTask = moveTask;
 
       task->start(args);
       return task;
@@ -637,91 +625,28 @@ class Cody {
     // Detect color
     struct DetectColorArgs : TaskArgs {
       Color color;
-      int transitionMs;
-
-      double startSpeed;
-      double endSpeed;
-      double minSpeed;
-      double accelerationMs;
-      double decelerationMm;
-      double transitionLookahead;
-
-      MoveFunction moveFunction;
+      Task* moveTask;
     };
 
     static void detectColorTask(void* task) {
       DetectColorArgs* args = (DetectColorArgs*)task;
-      PursuitData* data = &pathData;
-
-      // Set first point
-      SensorData sensorData = dataProvider->getPulses();
-      FusionData fusionData = Fusion::getData(sensorData);
-      Navigation::drive.decelerationDistance = data->lookaheadDistance;
-
-      data->lineIndex = 0;
-      data->points.insert(data->points.begin(), fusionData.position);
-
-      // Get last segment
-      int pointCount = data->points.size();
-      Line lastSegment(data->points[pointCount - 2], data->points[pointCount - 1]);
-
-      // Transition data
-      PursuitData* transitionData = new PursuitData(data->points, args->transitionLookahead, data->lineIndex);
-      Vector3 currentTransitionPoint;
-      double currentTransitionTime = 0.0;
-      int currentTransitionLineIndex = 0;
-
       unsigned long msStart = millis();
 
       while (true) {
         unsigned long msLoop = millis();
-        bool detectingColor = (msLoop - msStart) >= args->transitionMs;
 
         SensorData sensorData = dataProvider->getData();
         FusionData fusionData = Fusion::getData(sensorData);
-        Vector3 position = fusionData.position;
 
-        // Find lookahead and transition points
-        Vector3 lookaheadPoint = Pursuit::findLookahead(position, data, true);
-        Line lookaheadLine = { data->points[data->lineIndex], data->points[data->lineIndex + 1] };
-        double lookaheadTime = Pursuit::findLookaheadTime(position, lookaheadLine, data->lookaheadDistance);
-
-        Vector3 transitionPoint = Pursuit::findLookahead(position, transitionData, true);
-        Line transitionLine = { data->points[transitionData->lineIndex], data->points[transitionData->lineIndex + 1] };
-        double transitionTime = Pursuit::findLookaheadTime(position, transitionLine, transitionData->lookaheadDistance);
-
-        if (transitionData->lineIndex > currentTransitionLineIndex) {
-          currentTransitionPoint = transitionPoint;
-          currentTransitionTime = transitionTime;
-          currentTransitionLineIndex = transitionData->lineIndex;
+        if (fusionData.color == args->color) {
+            args->moveTask->requestStop = new bool(true);
+            break;
         }
-
-        if (data->lineIndex == currentTransitionLineIndex && lookaheadTime > currentTransitionTime)
-          Navigation::drive.target = lookaheadPoint;
-        else
-          Navigation::drive.target = currentTransitionPoint;
-
-        // End condition: finished path
-        bool inLastSegment = data->lineIndex == data->points.size() - 2;
-        double time = Pursuit::getClosestTime(lastSegment, position);
-        if (inLastSegment && time >= 1) break;
-
-        // End condition: color
-        if (detectingColor && fusionData.color == args->color) break;
-
-        // Acceleration and speed transition
-        double acceleration = Navigation::dmap((msLoop - msStart) / args->accelerationMs, 0.0, 1.0, args->minSpeed, args->startSpeed);
-        double speed = detectingColor ? args->endSpeed : std::min(acceleration, args->startSpeed);
-        args->moveFunction(fusionData, std::clamp(speed, 0.0, args->startSpeed));
 
         vTaskDelay(max(1000.0 / HZ - (millis() - msLoop), 0.0));
       }
 
-      stopRobot();
-      data->points.clear();
       args->task->stop();
-
-      delete transitionData;
       delete args;
     }
 
