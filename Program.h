@@ -19,7 +19,7 @@
 // Blocks
 #define FIRST_GROUP_WALL_X_MM -190
 #define BLOCK_GROUPS_INCREMENT -160
-#define BLOCK_DISTANCE_START 78
+#define BLOCK_DISTANCE_START 83
 #define BLOCK_DISTANCE_MOSAIC 50
 #define BLOCK_HEIGHT 30
 #define PICK_Y 20
@@ -28,7 +28,7 @@
 #define TOOLHEAD_UP 40
 #define TOOLHEAD_DOWN 0
 #define TOOLHEAD_PICK_START_X 0
-#define TOOLHEAD_LEAVE_START_X 20
+#define TOOLHEAD_LEAVE_START_X 15
 
 // Map
 #define MOSAIC_X -535
@@ -148,7 +148,7 @@ class Program {
             // Go to mosaic
             double mosaicX = MOSAIC_X;
             if (r == 0) mosaicX += 5;
-            else mosaicX += 20;
+            else mosaicX += 5;
 
             toolheadTask = Cody::homeAsync();
             align(ALIGN_DISTANCE, PICK_Y);
@@ -368,7 +368,9 @@ class Program {
         // pickLeave(xPosition, 1000, false, false);
 
         if (xPosition != 0 || force) Cody::moveToolheadAsync(xPosition, 0)->await();
+        Cody::moveZMsAsync(200, 100, false)->await();
         Cody::moveWheelsMsAsync(675, false)->await();
+        Cody::moveZMsAsync(200)->await();
     }
 
     static void pickLeave(double xPosition, double wheelsMs, bool wheelsUp, bool force = false, bool asyncWheels = false) {
