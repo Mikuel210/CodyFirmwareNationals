@@ -34,11 +34,10 @@ class BMS {
           Cody::hardwareProvider->toneBuzzer(BMS_FREQUENCY, 1000.0 / BMS_HZ / 2);
 
 
-        // Serial.print(sensorData.colorData.r); Serial.print(", ");
-        // Serial.print(sensorData.colorData.g); Serial.print(", ");
-        // Serial.print(sensorData.colorData.b); Serial.print(", || ");
-        // Serial.println(fusionData.color);
-        Serial.println(fusionData.toolheadPosition.x);
+        Serial.print(sensorData.colorData.r); Serial.print(", ");
+        Serial.print(sensorData.colorData.g); Serial.print(", ");
+        Serial.print(sensorData.colorData.b); Serial.print(", || ");
+        Serial.println(fusionData.color);
 
         vTaskDelay(max(1000.0 / BMS_HZ - (millis() - msStart), 0.0));
       }

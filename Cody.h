@@ -271,6 +271,30 @@ class Cody {
       return moveZMsAsync(900);
     }
 
+    static Task* zUpAndMoveX(double x, double speed = 100, double lookaheadDistance = TOOLHEAD_LOOKAHEAD) {
+        addToolheadPathPoint(x, 0);
+        ZUpAndMoveXArgs* args = new ZUpAndMoveXArgs();
+        Task* task = new Task("zUpAndMoveXTask", zUpAndMoveXTask);
+        toolheadPathData.lookaheadDistance = lookaheadDistance;
+
+        args->task = task;
+        args->ms = 900;
+        args->data = &toolheadPathData;
+        args->speed = speed / 100.0;
+        args->minSpeed = TOOLHEAD_MIN_SPEED / 100.0;
+        args->accelerationMs = TOOLHEAD_ACCELERATION_MS;
+        args->decelerationMm = TOOLHEAD_DECELERATION_MM;
+        args->transitionLookahead = lookaheadDistance;
+        args->positionMember = &FusionData::toolheadPosition;
+        args->navigationTarget = &Navigation::toolhead;
+        args->moveFunction = &moveToolhead;
+        args->stopFunction = &stopToolhead;
+        args->func = &moveToolheadThing;
+
+        task->start(args);
+        return task;
+    }
+
     // Wheels
     static Task* moveWheelsAsync(double z, double speed = 100, double lookaheadDistance = WHEELS_LOOKAHEAD) {
       addWheelsPathPoint(z);
@@ -597,6 +621,103 @@ class Cody {
       delete args;
     }
 
+
+
+    using MoveFunctionThing = void (*)(FusionData, double, bool);
+
+
+    struct ZUpAndMoveXArgs : FollowPathArgs {
+        double ms;
+        MoveFunctionThing func;
+    };
+
+    static void zUpAndMoveXTask(void* task) {
+        ZUpAndMoveXArgs* args = (ZUpAndMoveXArgs*)task;
+              PursuitData* data = args->data;
+
+              // Set first point
+              SensorData sensorData = dataProvider->getPulses();
+              FusionData fusionData = Fusion::getData(sensorData);
+              args->navigationTarget->decelerationDistance = data->lookaheadDistance;
+
+              data->lineIndex = 0;
+              data->points.insert(data->points.begin(), fusionData.*(args->positionMember));
+
+              // Get last segment
+              int pointCount = data->points.size();
+              Line lastSegment(data->points[pointCount - 2], data->points[pointCount - 1]);
+
+              // Transition data
+              PursuitData* transitionData = new PursuitData(data->points, args->transitionLookahead, data->lineIndex);
+              Vector3 currentTransitionPoint;
+              double currentTransitionTime = 0.0;
+              int currentTransitionLineIndex = 0;
+
+              unsigned long msStart = millis();
+
+              while (true) {
+                if (*(args->task->requestStop)) break;
+
+                unsigned long msLoop = millis();
+
+                SensorData sensorData = dataProvider->getPulses();
+                FusionData fusionData = Fusion::getData(sensorData);
+                Vector3 position = fusionData.*(args->positionMember);
+
+                // Find lookahead and transition points
+                Vector3 lookaheadPoint = Pursuit::findLookahead(position, data, true);
+                Line lookaheadLine = { data->points[data->lineIndex], data->points[data->lineIndex + 1] };
+                double lookaheadTime = Pursuit::findLookaheadTime(position, lookaheadLine, data->lookaheadDistance);
+
+                Vector3 transitionPoint = Pursuit::findLookahead(position, transitionData, true);
+                Line transitionLine = { data->points[transitionData->lineIndex], data->points[transitionData->lineIndex + 1] };
+                double transitionTime = Pursuit::findLookaheadTime(position, transitionLine, transitionData->lookaheadDistance);
+
+                if (transitionData->lineIndex > currentTransitionLineIndex) {
+                  currentTransitionPoint = transitionPoint;
+                  currentTransitionTime = transitionTime;
+                  currentTransitionLineIndex = transitionData->lineIndex;
+                }
+
+                if (data->lineIndex == currentTransitionLineIndex && lookaheadTime > currentTransitionTime)
+                  args->navigationTarget->target = lookaheadPoint;
+                else
+                  args->navigationTarget->target = currentTransitionPoint;
+
+                // Debug
+                #ifdef DEBUG
+                  if (position.x == fusionData.position.x) {
+                    plotX = fusionData.position.y;
+                    plotY = -fusionData.position.x;
+                    plot.Plot();
+                  }
+                #endif
+
+                // End condition
+                bool inLastSegment = data->lineIndex == data->points.size() - 2;
+                double time = Pursuit::getClosestTime(lastSegment, position);
+                if (inLastSegment && time >= 1) break;
+
+                // Acceleration and deceleration
+                double distance = Navigation::getDistance(position, lastSegment.end);
+                double acceleration = Navigation::dmap((msLoop - msStart) / args->accelerationMs, 0.0, 1.0, args->minSpeed, args->speed);
+                double deceleration = Navigation::dmap(distance, args->decelerationMm, 0.0, args->speed, args->minSpeed);
+                double speed = std::min((inLastSegment && distance <= args->decelerationMm) ? deceleration : acceleration, args->speed);
+                args->func(fusionData, std::clamp(speed, 0.0, args->speed), (msLoop - msStart) < 900);
+
+                vTaskDelay(max(1000.0 / HZ - (millis() - msLoop), 0.0));
+              }
+
+              args->stopFunction();
+              data->points.clear();
+              args->task->stop();
+
+              delete transitionData;
+              delete args;
+    }
+
+
+
     // Mill
     struct MoveMillMsArgs : TaskArgs {
           double ms;
@@ -735,6 +856,12 @@ class Cody {
       ToolheadData toolheadData = Navigation::getToolheadData(fusionData, speed);
       hardwareProvider->moveToolhead({ toolheadData.xAxisMotor, { false, 0 } });
     }
+
+
+    static void moveToolheadThing(FusionData fusionData, double speed, bool thing) {
+          ToolheadData toolheadData = Navigation::getToolheadData(fusionData, speed);
+          hardwareProvider->moveToolhead({ toolheadData.xAxisMotor, { thing, thing ? 255 : 0 } });
+        }
 
     static void moveWheels(FusionData fusionData, double speed) {
       WheelsData wheelsData = Navigation::getWheelsData(fusionData, speed);

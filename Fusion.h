@@ -90,6 +90,10 @@ class Fusion {
           */
     }
 
+    static void startAtMinus90() {
+        previousFusionData.orientation = -90;
+    }
+
     static void setX(double x) {
       previousFusionData.position = Vector3(x, previousFusionData.position.y);
     }
