@@ -57,8 +57,8 @@ class Program {
 
     static void blocks() {
         // Home and align
-        // align(-40, -ALIGN_DISTANCE, 1000, 42, 150, 250);
-        // Cody::setYOrientation(ALIGN_SET_Y, 0);
+        align(-40, -ALIGN_DISTANCE, 1000, 42, 150, 250);
+        Cody::setYOrientation(ALIGN_SET_Y, 0);
 
         // Take vPicture
         std::vector<Color> colors = { BLUE, BLUE, BLUE, BLUE, BLUE, BLUE, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW, YELLOW };
@@ -88,13 +88,12 @@ class Program {
         };
 
 
-        // Cody::addPathPoint(0, PICK_Y);
-        // Cody::followPathAsync()->await();
-        // Cody::rotateToAsync(-90)->await();
+        Cody::addPathPoint(0, PICK_Y);
+        Cody::followPathAsync()->await();
+        Cody::rotateToAsync(-90)->await();
 
         // Pick/leave cycles
 
-        /*
             // ========== PICK ==========
             toolheadTask = Cody::zUpAsync();
             align(ALIGN_DISTANCE, PICK_Y, 1000);
@@ -185,13 +184,11 @@ class Program {
                         break;
                 }
             }
-*/
 
             // ========== LEAVE ==========
             // Go to mosaic
             double mosaicX = MOSAIC_X;
 
-            /*
             align(ALIGN_DISTANCE, PICK_Y + 10);
             Cody::setXOrientation(ALIGN_SET_X, -90);
             toolheadTask = Cody::homeAsync();
@@ -251,34 +248,18 @@ class Program {
                 leave(meow, totalPicked, meow != 2);
             }
 
-            */
-
-        Cody::setX(mosaicX);
-        Cody::setYOrientation(715, 0);
-
-            // Carry blocks
-            Cody::addPathPoint(mosaicX, 550);
-            Cody::followPathAsync(45, true)->await();
-            delay(100);
-            toolheadTask = Cody::homeAsync();
-            Cody::addPathPoint(mosaicX, 400);
-            align(ALIGN_DISTANCE, 400);
-            Cody::setYOrientation(ALIGN_SET_Y, 0);
-            toolheadTask->await();
-
-            Cody::addPathPoint(-40, PICK_Y);
-            Cody::followPathAsync()->await();
-            Cody::rotateToAsync(-90)->await();
+        // Carry blocks
+        Cody::addPathPoint(mosaicX, 400);
+        Cody::followPathAsync(45, true)->await();
+        delay(100);
+        toolheadTask = Cody::homeAsync();
+        align(ALIGN_DISTANCE, 400, 2500);
+        Cody::setXOrientation(ALIGN_SET_X, -90);
+        toolheadTask->await();
     }
 
     static void items() {
         // Align
-        Cody::addPathPoint(-40, 400);
-        Cody::addPathPoint(-250, 400);
-        Cody::followPathAsync()->await();
-
-        align(ALIGN_DISTANCE, 400, 2000);
-        Cody::setXOrientation(ALIGN_SET_X, -90);
 
         // Carry first item
         // Cody::addPathPoint(0, 400);
@@ -295,43 +276,34 @@ class Program {
         // Cody::followPathAsync()->await();
 
         // Carry 1st item
+
+        toolheadTask = Cody::zUpAndMoveX(160);
+
         Cody::addPathPoint(-60, 400);
-        Cody::addPathPoint(-60, 1000);
+        Cody::addPathPoint(-60, 1050);
         Cody::followPathAsync(40)->await();
 
-        Cody::addPathPoint(0, 800);
-        Cody::addPathPoint(25, 600);
+        Cody::addPathPoint(0, 850);
+        Cody::addPathPoint(25, 675);
         Cody::followPathAsync(40, true, 50, 100)->await();
 
         // Carry second item
-        Cody::addPathPoint(60, 800);
-        Cody::addPathPoint(60, 1000);
-        Cody::addPathPoint(-35, 1200);
+        Cody::addPathPoint(60, 1030);
         Cody::followPathAsync()->await();
-        Cody::rotateToAsync(180)->await();
+        Cody::moveZMsAsync(100, 100, false)->await();
+        toolheadTask = Cody::moveToolheadAsync(50, 0);
 
         Cody::addPathPoint(-35, 1200);
         Cody::addPathPoint(-35, 1650);
-        Cody::followPathAsync(45, true, 100, 150)->await();
+        Cody::followPathAsync(30, false, 100, 150)->await();
 
-        Cody::rotateToAsync(90)->await();
-        Cody::addPathPoint(-100, 1650);
-        Cody::followPathAsync(45, true)->await();
-
-        pause();
-
-        // Carry 2nd item
-        Cody::addPathPoint(60, 800);
-        Cody::addPathPoint(60, 1000);
-        Cody::addPathPoint(-35, 1200);
-        Cody::addPathPoint(-35, 1550);
-        Cody::followPathAsync(45, false, 100, 150)->await();
         Cody::rotateToAsync(-90)->await();
-        Cody::addPathPoint(-200, 1550);
+        Cody::addPathPoint(-150, 1650);
         Cody::followPathAsync()->await();
+        toolheadTask = Cody::moveZMsAsync(300);
 
         // Carry 3rd item
-        Cody::moveMillMsAsync(250, false);
+        Cody::moveMillMsAsync(300, false);
         Cody::addPathPoint(0, 1600);
         Cody::addPathPoint(30, 1500);
         Cody::followPathAsync(30, true)->await();
