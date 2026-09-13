@@ -28,11 +28,11 @@
 #define TOOLHEAD_UP 40
 #define TOOLHEAD_DOWN 0
 #define TOOLHEAD_PICK_START_X 0
-#define TOOLHEAD_LEAVE_START_X 5
+#define TOOLHEAD_LEAVE_START_X 38
 
 // Map
 #define MOSAIC_X -545
-#define MOSAIC_Y 870
+#define MOSAIC_Y 874
 #define BLOCKS_LINE_DETECT_Y 300
 
 #pragma endregion
@@ -187,7 +187,7 @@ class Program {
 
             // ========== LEAVE ==========
             // Go to mosaic
-            double mosaicX = MOSAIC_X;
+            double mosaicX = MOSAIC_X + 15;
 
             align(ALIGN_DISTANCE, PICK_Y + 10);
             Cody::setXOrientation(ALIGN_SET_X, -90);
@@ -199,7 +199,7 @@ class Program {
             Cody::setYOrientation(ALIGN_SET_Y, 0);
 
             Cody::addPathPoint(-40, 450);
-            Cody::addPathPoint(mosaicX + 150, 450);
+            Cody::addPathPoint(mosaicX + 120, 450);
             Cody::followPathAsync()->await();
 
             Cody::addPathPoint(mosaicX - 150, 450);
@@ -216,7 +216,7 @@ class Program {
             Cody::rotateToAsync(0)->await();
 
             Cody::addPathPoint(mosaicX, MOSAIC_Y);
-            toolheadTask = Cody::moveToolheadAsync(TOOLHEAD_LEAVE_START_X, 0);
+            toolheadTask = Cody::moveToolheadAsync(28, 0);
             moveTask = Cody::followPathAsync(20);
             Cody::detectColorAsync(BLACK, moveTask)->await();
             Cody::setY(715);
@@ -231,7 +231,7 @@ class Program {
             Cody::followPathAsync(25)->await();
             toolheadTask->await();
 
-            double orientation = -10;
+            double orientation = 0;
             Cody::rotateToAsync(orientation)->await();
 
             for (int meow = 0; meow < 3; meow++) {
@@ -241,7 +241,7 @@ class Program {
 
             SensorData sensorData = Cody::dataProvider->getData();
             FusionData fusionData = Fusion::getData(sensorData);
-            Cody::addPathPoint(fusionData.position.x, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * (position - 1) + 10);
+            Cody::addPathPoint(fusionData.position.x, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * (position - 1));
             Cody::followPathAsync(25, true, 100, 250, 40, 25)->await();
             Cody::rotateToAsync(orientation)->await();
 
@@ -257,7 +257,7 @@ class Program {
         toolheadTask = Cody::homeAsync();
         Cody::rotateToAsync(-90)->await();
         align(ALIGN_DISTANCE, 400, 2500);
-        Cody::setXOrientation(ALIGN_SET_X, -90);
+        Cody::setXOrientation(3, -90);
         toolheadTask->await();
     }
 
@@ -287,7 +287,7 @@ class Program {
         Cody::followPathAsync(40)->await();
 
         Cody::addPathPoint(0, 850);
-        Cody::addPathPoint(25, 675);
+        Cody::addPathPoint(20, 675);
         Cody::followPathAsync(40, true, 50, 100)->await();
 
         // Carry second item
@@ -296,8 +296,8 @@ class Program {
         Cody::moveZMsAsync(100, 100, false)->await();
         toolheadTask = Cody::moveToolheadAsync(50, 0);
 
-        Cody::addPathPoint(-35, 1200);
-        Cody::addPathPoint(-35, 1650);
+        Cody::addPathPoint(25, 1200);
+        Cody::addPathPoint(25, 1650);
         Cody::followPathAsync(30, false, 100, 150)->await();
 
         Cody::rotateToAsync(-90)->await();
