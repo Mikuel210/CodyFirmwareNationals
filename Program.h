@@ -42,7 +42,6 @@ class Program {
   public:
     static void go() {
         Fusion::restart();
-        Fusion::startAtMinus90();
 
         blocks();
         items();
@@ -175,6 +174,7 @@ class Program {
                     Cody::homeZAsync()->await();
                     delay(250);
                     Cody::zUpAndMoveX(TOOLHEAD_PICK_START_X + BLOCK_DISTANCE_START * nextPosition)->await();
+
                     if (j == 2) {
                         toolheadTask = Cody::zUpAsync();
                         delay(700);
@@ -230,7 +230,9 @@ class Program {
             Cody::addPathPoint(mosaicX, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * position);
             Cody::followPathAsync(25)->await();
             toolheadTask->await();
-            Cody::rotateToAsync(0)->await();
+
+            double orientation = -10;
+            Cody::rotateToAsync(orientation)->await();
 
             for (int meow = 0; meow < 3; meow++) {
                 totalPicked--;
@@ -241,7 +243,7 @@ class Program {
             FusionData fusionData = Fusion::getData(sensorData);
             Cody::addPathPoint(fusionData.position.x, MOSAIC_Y + BLOCK_DISTANCE_MOSAIC * (position - 1) + 10);
             Cody::followPathAsync(25, true, 100, 250, 40, 25)->await();
-            Cody::rotateToAsync(0)->await();
+            Cody::rotateToAsync(orientation)->await();
 
             for (int meow = 2; meow >= 0; meow--) {
                 totalPicked--;
@@ -253,6 +255,7 @@ class Program {
         Cody::followPathAsync(45, true)->await();
         delay(100);
         toolheadTask = Cody::homeAsync();
+        Cody::rotateToAsync(-90)->await();
         align(ALIGN_DISTANCE, 400, 2500);
         Cody::setXOrientation(ALIGN_SET_X, -90);
         toolheadTask->await();
@@ -303,6 +306,8 @@ class Program {
         toolheadTask = Cody::moveZMsAsync(300);
 
         // Carry 3rd item
+
+        /*
         Cody::moveMillMsAsync(300, false);
         Cody::addPathPoint(0, 1600);
         Cody::addPathPoint(30, 1500);
@@ -317,7 +322,7 @@ class Program {
         Cody::addPathPoint(-150, 350);
         Cody::addPathPoint(-150, 150);
         Cody::followPathAsync(30, true)->await();
-
+*/
         // Go to white
         Cody::addPathPoint(-100, 550);
         Cody::addPathPoint(-15, 725);
@@ -334,12 +339,15 @@ class Program {
 
     static void cement() {
         // Align
-        Cody::addPathPoint(0, 1750);
+        Cody::addPathPoint(-150, 1650);
         Cody::addPathPoint(-150, 1700);
         Cody::followPathAsync()->await();
+        Cody::rotateToAsync(-90)->await();
 
         align(ALIGN_DISTANCE, 1700, 1500);
         Cody::setXOrientation(ALIGN_SET_X, -90);
+
+        toolheadTask = Cody::homeAsync();
 
         // Pick green
         double center = 1015;
@@ -357,6 +365,9 @@ class Program {
         Cody::addPathPoint(-525, 1700);
         Cody::followPathAsync(45, true)->await();
 
+        toolheadTask->await();
+        toolheadTask = Cody::moveToolheadAsync(160, 0);
+
         // Pick yellow
         Cody::rotateToAsync(-90)->await();
         Cody::addPathPoint(-780, 1700);
@@ -373,6 +384,42 @@ class Program {
         Cody::moveMillAsync(90)->await();
         Cody::addPathPoint(0, 1030);
         Cody::followPathAsync(45, true)->await();
+
+        toolheadTask->await();
+
+        //// REGLA SORPRESA
+        Cody::rotateToAsync(0)->await();
+        Cody::addPathPoint(30, 1100);
+        Cody::addPathPoint(30, 1160);
+        Cody::followPathAsync()->await();
+
+        Color color = Fusion::getData(Cody::dataProvider->getData()).color;
+
+        Cody::addPathPoint(10, 1650);
+        Cody::addPathPoint(10, 1700);
+        Cody::followPathAsync()->await();
+        Cody::rotateToAsync(-90)->await();
+
+        toolheadTask = Cody::homeAsync();
+
+        // Pick green
+        int colorIndex = 0;
+
+        switch (color) {
+            case BLUE: colorIndex = 1; break;
+            case GREEN: colorIndex = 2; break;
+            case YELLOW: colorIndex = 3; break;
+        }
+
+        double position = -245 * colorIndex;
+
+        Cody::addPathPoint(position, 1700);
+        Cody::followPathAsync()->await();
+        millTask = Cody::moveMillAsync(90);
+        Cody::rotateToAsync(0)->await();
+        Cody::addPathPoint(position, 1975);
+        Cody::followPathAsync(45)->await();
+        millTask->await();
     }
 
     // Helpers
