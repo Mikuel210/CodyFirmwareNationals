@@ -1,2 +1,1 @@
-# todo uninstall java
 arduino-cli compile --fqbn esp32:esp32:esp32
